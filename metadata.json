@@ -1,0 +1,6 @@
+{
+  "name": "Hospital Workflow Analysis & Process Optimization",
+  "description": "Operational analytics system for hospital patient flows, waiting & processing time calculation, automatic bottleneck detection, and scenario simulation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
