@@ -17,6 +17,17 @@ export const app = express();
 
 app.use(express.json());
 
+// CORS middleware for cross-origin API access (required for Vercel deployment)
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 // Initialize database connection
 let dbInitialized = false;
 export async function initializeDatabase() {
@@ -57,13 +68,7 @@ export async function initializeDatabase() {
   dbInitialized = true;
 }
 
-// Middleware to ensure DB is connected
-app.use(async (req, res, next) => {
-  if (!dbInitialized) {
-    await initializeDatabase();
-  }
-  next();
-});
+
 
 
 // ==========================================
