@@ -5,11 +5,8 @@ import {
   Lock, 
   Mail, 
   User as UserIcon, 
-  ShieldCheck, 
-  Building, 
   AlertCircle, 
   Check, 
-  KeyRound,
   ArrowRight
 } from 'lucide-react';
 
@@ -66,19 +63,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         if (!result.success) {
           setError(result.error || 'Registration failed.');
         } else {
-          setSuccessMsg('Account created and authenticated securely via JWT.');
+          setSuccessMsg('Account created successfully.');
           setTimeout(() => onClose(), 600);
         }
       }
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleQuickLogin = (demoEmail: string) => {
-    setEmail(demoEmail);
-    setPassword('password123');
-    setError(null);
   };
 
   return (
@@ -95,7 +86,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {mode === 'login' ? 'Hospital Staff Authentication' : 'Create Staff Account'}
               </h3>
               <p className="text-xs text-slate-500">
-                Secure JWT session with Bcrypt password encryption
+                Please securely authenticate to proceed.
               </p>
             </div>
           </div>
@@ -148,39 +139,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs flex items-center gap-2">
             <Check className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>{successMsg}</span>
-          </div>
-        )}
-
-        {/* Quick Demo Credentials Strip for fast evaluation */}
-        {mode === 'login' && (
-          <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs">
-            <span className="font-semibold text-slate-700 block mb-1.5 flex items-center gap-1">
-              <KeyRound className="w-3.5 h-3.5 text-blue-600" />
-              <span>Verified Role Credentials (1-Click Fill):</span>
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('director@hospital.org')}
-                className="px-2 py-1 bg-white border border-slate-300 rounded text-[11px] text-slate-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 font-mono transition-colors"
-              >
-                Director (Dr. Vance)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('analyst@hospital.org')}
-                className="px-2 py-1 bg-white border border-slate-300 rounded text-[11px] text-slate-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 font-mono transition-colors"
-              >
-                Analyst (Marcus C.)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('admin@hospital.org')}
-                className="px-2 py-1 bg-white border border-slate-300 rounded text-[11px] text-slate-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 font-mono transition-colors"
-              >
-                Admin (Operations)
-              </button>
-            </div>
           </div>
         )}
 
@@ -290,15 +248,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </button>
           </div>
         </form>
-
-        {/* Security verification stamp */}
-        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-          <span className="flex items-center gap-1">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            <span>MongoDB Role-Based Access Control</span>
-          </span>
-          <span className="font-mono">JWT RSA/HMAC Signed</span>
-        </div>
       </div>
     </div>
   );

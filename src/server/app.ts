@@ -10,7 +10,6 @@ import {
   authenticateJWT, 
   AuthRequest 
 } from './auth';
-import { generateSyntheticDataset } from '../utils/syntheticData';
 
 dotenv.config();
 
@@ -24,66 +23,34 @@ export async function initializeDatabase() {
   if (dbInitialized) return;
   await connectDB();
 
-  const defaultUsers = [
-    {
-      name: 'Dr. Evelyn Vance',
-      email: 'director@hospital.org',
-      password: 'password123',
-      role: 'director',
-      department: 'Hospital Administration',
-    },
-    {
-      name: 'Marcus Chen',
-      email: 'analyst@hospital.org',
-      password: 'password123',
-      role: 'analyst',
-      department: 'Operations & Process Engineering',
-    },
-    {
-      name: 'Administrator',
-      email: 'admin@hospital.org',
-      password: 'password123',
-      role: 'admin',
-      department: 'Clinical Operations',
-    },
-  ];
-
-  for (const u of defaultUsers) {
-    if (isUsingMemoryStore()) {
-      if (!memoryStore.users.has(u.email)) {
-        const hashedPassword = await hashPassword(u.password);
-        memoryStore.users.set(u.email, {
-          _id: `usr_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-          ...u,
-          password: hashedPassword,
-          createdAt: new Date(),
-        });
-      }
-    } else {
-      const existing = await UserModel.findOne({ email: u.email });
-      if (!existing) {
-        const hashedPassword = await hashPassword(u.password);
-        await UserModel.create({
-          ...u,
-          password: hashedPassword,
-        });
-      }
-    }
-  }
-
-  let patientCount = 0;
+  // Seed default admin user for production initial setup
+  const adminEmail = 'admin@hospital.org';
+  const adminPassword = 'admin'; // User should change this in production
+  
   if (isUsingMemoryStore()) {
-    patientCount = memoryStore.patients.size;
+    if (!memoryStore.users.has(adminEmail)) {
+      const hashedPassword = await hashPassword(adminPassword);
+      memoryStore.users.set(adminEmail, {
+        _id: `usr_${Date.now()}`,
+        name: 'System Administrator',
+        email: adminEmail,
+        password: hashedPassword,
+        role: 'admin',
+        department: 'System Administration',
+        createdAt: new Date(),
+      });
+    }
   } else {
-    patientCount = await PatientModel.countDocuments();
-  }
-
-  if (patientCount === 0) {
-    const initialRecords = generateSyntheticDataset(820, 1042, 'standard');
-    if (isUsingMemoryStore()) {
-      initialRecords.forEach((p) => memoryStore.patients.set(p.patientId, p));
-    } else {
-      await PatientModel.insertMany(initialRecords);
+    const existing = await UserModel.findOne({ email: adminEmail });
+    if (!existing) {
+      const hashedPassword = await hashPassword(adminPassword);
+      await UserModel.create({
+        name: 'System Administrator',
+        email: adminEmail,
+        password: hashedPassword,
+        role: 'admin',
+        department: 'System Administration',
+      });
     }
   }
 
@@ -98,8 +65,9 @@ app.use(async (req, res, next) => {
   next();
 });
 
+
 // ==========================================
-// AUTHENTICATION ROUTES (JWT + BCRYPT)
+// AUTHENTICATION ROUTES
 // ==========================================
 
 // Register
@@ -171,7 +139,7 @@ app.post('/api/auth/register', async (req, res) => {
     });
   } catch (err: any) {
     console.error('Registration error:', err);
-    res.status(500).json({ error: 'Server error during registration: ' + err.message });
+    res.status(500).json({ error: 'Server error during registration' });
   }
 });
 
@@ -223,7 +191,7 @@ app.post('/api/auth/login', async (req, res) => {
     });
   } catch (err: any) {
     console.error('Login error:', err);
-    res.status(500).json({ error: 'Server error during login: ' + err.message });
+    res.status(500).json({ error: 'Server error during login' });
   }
 });
 
@@ -290,7 +258,7 @@ app.get('/api/patients/:id', async (req, res) => {
   }
 });
 
-// Create / Check-in New Real Patient (Protected)
+// Create / Check-in New Real Patient
 app.post('/api/patients', authenticateJWT, async (req: AuthRequest, res) => {
   try {
     const { name, department, workflowType, ageGroup, gender, initialStage } = req.body;
@@ -415,36 +383,11 @@ app.post('/api/patients/:id/advance', authenticateJWT, async (req: AuthRequest, 
   }
 });
 
-// Seed / Reset Operational Records
-app.post('/api/seed', authenticateJWT, async (req: AuthRequest, res) => {
-  try {
-    const { count = 820, pattern = 'standard' } = req.body;
-    const freshRecords = generateSyntheticDataset(count, Date.now() % 10000, pattern);
-
-    if (isUsingMemoryStore()) {
-      memoryStore.patients.clear();
-      freshRecords.forEach((p) => memoryStore.patients.set(p.patientId, p));
-    } else {
-      await PatientModel.deleteMany({});
-      await PatientModel.insertMany(freshRecords);
-    }
-
-    res.json({
-      message: `Successfully seeded ${freshRecords.length} records`,
-      count: freshRecords.length,
-      pattern,
-    });
-  } catch (err: any) {
-    console.error('Seed error:', err);
-    res.status(500).json({ error: 'Failed seeding data: ' + err.message });
-  }
-});
-
 // System Status / Health
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'healthy',
-    database: isUsingMemoryStore() ? 'In-Memory Enterprise Document Store' : 'MongoDB Mongoose Driver',
+    database: isUsingMemoryStore() ? 'In-Memory Store' : 'MongoDB',
     authenticatedUsersCount: isUsingMemoryStore() ? memoryStore.users.size : 'Active in Mongo',
     patientsCount: isUsingMemoryStore() ? memoryStore.patients.size : 'Active in Mongo',
     timestamp: new Date().toISOString(),

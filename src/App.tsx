@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Patient, FilterState, StagePerformance, BottleneckInsight } from './types/hospital';
 import { filterPatients } from './utils/storage';
 import { computeStagePerformances, detectBottlenecks } from './utils/calculations';
-import { PresetPattern } from './utils/syntheticData';
 import { AuthProvider, useAuth } from './utils/authContext';
 import { Navbar, NavTab } from './components/common/Navbar';
 import { FilterBar } from './components/common/FilterBar';
@@ -19,9 +18,8 @@ import { NewPatientModal } from './components/patients/NewPatientModal';
 import { WorkflowVisualizer } from './components/workflows/WorkflowVisualizer';
 import { BottleneckList } from './components/bottlenecks/BottleneckList';
 import { ScenarioSimulator } from './components/scenarios/ScenarioSimulator';
-import { CollegeProjectDocs } from './components/documentation/CollegeProjectDocs';
-import { DataSeederModal } from './components/common/DataSeederModal';
 import { AuthModal } from './components/auth/AuthModal';
+
 import { 
   Users, 
   Clock, 
@@ -49,11 +47,9 @@ function HospitalApp() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
-  const [activePattern, setActivePattern] = useState<PresetPattern>('standard');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
 
   // Modals state
-  const [isDataModalOpen, setIsDataModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isNewPatientModalOpen, setIsNewPatientModalOpen] = useState(false);
 
@@ -155,29 +151,7 @@ function HospitalApp() {
     setFilters(DEFAULT_FILTERS);
   };
 
-  // Re-seed dataset via backend API
-  const handleResetData = async (count: number, pattern: PresetPattern) => {
-    try {
-      const res = await fetch('/api/seed', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ count, pattern }),
-      });
-      if (res.ok) {
-        setActivePattern(pattern);
-        await fetchPatients();
-      }
-    } catch (err) {
-      console.error('Seed request failed:', err);
-    }
-  };
 
-  const handleImportData = (imported: Patient[]) => {
-    setPatients(imported);
-  };
 
   const handleExportData = () => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(filteredPatients, null, 2));
@@ -207,7 +181,6 @@ function HospitalApp() {
       <Navbar
         activeTab={activeTab}
         onSelectTab={setActiveTab}
-        onOpenDataModal={() => setIsDataModalOpen(true)}
         onExportData={handleExportData}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onOpenNewPatientModal={() => {
@@ -409,8 +382,7 @@ function HospitalApp() {
           <ScenarioSimulator patients={filteredPatients} />
         )}
 
-        {/* TAB 6: COLLEGE PROJECT ACADEMIC DOCUMENTATION */}
-        {activeTab === 'docs' && <CollegeProjectDocs />}
+
       </main>
 
       {/* Patient Journey Timeline Modal with Real Stage Advance */}
@@ -420,15 +392,6 @@ function HospitalApp() {
         onPatientUpdated={handlePatientUpdated}
       />
 
-      {/* Synthetic Dataset Seeder & Preset Switcher Modal */}
-      <DataSeederModal
-        isOpen={isDataModalOpen}
-        onClose={() => setIsDataModalOpen(false)}
-        activePattern={activePattern}
-        onResetData={handleResetData}
-        onImportData={handleImportData}
-        totalRecords={patients.length}
-      />
 
       {/* Secure Authentication Modal */}
       <AuthModal

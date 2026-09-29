@@ -1,50 +1,5 @@
 import { Patient, FilterState } from '../types/hospital';
-import { generateSyntheticDataset, PresetPattern } from './syntheticData';
 
-const STORAGE_KEY = 'hospital_workflow_records_v1';
-const PATTERN_KEY = 'hospital_workflow_active_pattern';
-
-export function getStoredPatients(): Patient[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      const initial = generateSyntheticDataset(820, 1042, 'standard');
-      savePatients(initial);
-      localStorage.setItem(PATTERN_KEY, 'standard');
-      return initial;
-    }
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed;
-    }
-    const initial = generateSyntheticDataset(820, 1042, 'standard');
-    savePatients(initial);
-    return initial;
-  } catch (err) {
-    console.error('Failed reading stored patients, regenerating:', err);
-    return generateSyntheticDataset(820, 1042, 'standard');
-  }
-}
-
-export function savePatients(patients: Patient[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(patients));
-  } catch (err) {
-    console.error('Failed saving patients to storage:', err);
-  }
-}
-
-export function resetDataset(count = 820, pattern: PresetPattern = 'standard'): Patient[] {
-  const seed = Math.floor(Math.random() * 90000) + 1000;
-  const newDataset = generateSyntheticDataset(count, seed, pattern);
-  savePatients(newDataset);
-  localStorage.setItem(PATTERN_KEY, pattern);
-  return newDataset;
-}
-
-export function getActivePattern(): PresetPattern {
-  return (localStorage.getItem(PATTERN_KEY) as PresetPattern) || 'standard';
-}
 
 export function filterPatients(patients: Patient[], filters: FilterState): Patient[] {
   const todayStr = new Date().toISOString().split('T')[0];
